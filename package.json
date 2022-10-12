@@ -1,0 +1,12 @@
+{
+  "name": "qqwry.dat",
+  "version": "1.0.0",
+  "type": "module",
+  "repository": "git@github.com:metowolf/qqwry.dat.git",
+  "author": "metowolf <i@i-meto.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "execa": "^6.1.0",
+    "lib-qqwry": "^1.3.2"
+  }
+}
