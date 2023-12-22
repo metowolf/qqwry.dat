@@ -1,21 +1,24 @@
 name: Release
 
 on:
-  push:
-    branches: [ "main" ]
-    paths:
-      - 'url.txt'
   workflow_dispatch:
+
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Parse
+      - name: Download innoextract
+        run: |
+          wget https://github.com/dscharrer/innoextract/releases/download/1.9/innoextract-1.9-linux.tar.xz
+          tar -xvf innoextract-1.9-linux.tar.xz innoextract-1.9-linux/bin/amd64/innoextract --strip-components 3
+          chmod +x innoextract
+          sudo mv innoextract /usr/local/bin
+      - name: Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ./scripts/download.sh
-          yarn install
-          node scripts/release.js
+          pnpm i
+          pnpm run build
