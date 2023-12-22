@@ -1,7 +1,7 @@
 import fetch from 'node-fetch'
-import { mkdir, writeFile } from 'fs/promises'
+import fs from 'fs'
 import { execa } from 'execa'
-import { parse } from 'path'
+import libqqwry from 'lib-qqwry'
 
 const globalFetchHeaders = {
   'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -48,22 +48,14 @@ const parseArticle = async (articles) => {
 }
 
 const download = async (url) => {
-  const options = {
-    method: 'GET',
-    headers: {
-      ...globalFetchHeaders
-    }
-  }
-  const res = await fetch(url, options)
-  const buffer = Buffer.from(await res.arrayBuffer())
-  await mkdir('./temp', { recursive: true })
-  await writeFile('./temp/download.zip', buffer)
+  await fs.promises.mkdir('./temp', { recursive: true })
+  await execa('wget', ['-U', globalFetchHeaders['user-agent'], '-O', './temp/download.zip', url])
 }
 
 const extract = async () => {
   await execa('unzip', ['./temp/download.zip', '-d', './temp'])
   await execa('innoextract', ['./temp/setup.exe', '-d', './temp'])
-  await mkdir('./dist', { recursive: true })
+  await fs.promises.mkdir('./dist', { recursive: true })
   await execa('mv', ['./temp/app/qqwry.dat', './dist/qqwry.dat'])
 }
 
@@ -94,6 +86,16 @@ const parseQQwryInfo = async () => {
   return info
 }
 
+const readInfo = () => {
+  const data = fs.readFileSync('./version.json', 'utf-8')
+  return JSON.parse(data)
+}
+
+const parseQQWryVersion = async () => {
+  const qqwry = libqqwry(true, './dist/qqwry.dat')
+  const info = await qqwry.searchIP('255.255.255.255')
+  return info.Area.match(/(\d+)/gi).join('')
+}
 
 const release = async () => {
   const info = await readInfo()
