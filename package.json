@@ -2,8 +2,8 @@
   "name": "qqwry.dat",
   "version": "1.0.0",
   "type": "module",
-  "repository": "git@github.com:metowolf/qqwry.dat.git",
-  "author": "metowolf <i@i-meto.com>",
+  "repository": "git@github.com:clangcn/qqwry.dat.git",
+  "author": "clangcn <clangcn@gmail.com>",
   "license": "MIT",
   "scripts": {
     "build": "node src/build.js"
