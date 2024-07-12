@@ -132,24 +132,24 @@ const release = async () => {
 
 const main = async () => {
   // 1. 获取微信公众号文章列表
-  const articles = await getArticles()
-  console.log('文章列表:', articles)
+  // const articles = await getArticles()
+  // console.log('文章列表:', articles)
 
   // 2. 解析文章内容，获取下载地址
-  const url = await parseArticle(articles)
-  if (!url) {
-    console.log('未找到下载地址')
-    return
-  }
-  console.log(`获取到下载地址: ${url}`)
+  // const url = await parseArticle(articles)
+  // if (!url) {
+  //   console.log('未找到下载地址')
+  //   return
+  // }
+  // console.log(`获取到下载地址: ${url}`)
 
   // 3. 下载并解压
-  await download(url)
-  console.log('下载完成')
+  // await download(url)
+  // console.log('下载完成')
 
   // 4. 解压获取 qqwry.dat
-  await extract()
-  console.log('解压完成')
+  // await extract()
+  // console.log('解压完成')
 
   // 5. 生成版本信息
   await release()

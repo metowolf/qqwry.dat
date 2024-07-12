@@ -12,12 +12,12 @@ jobs:
           version: 8
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Download innoextract
+      - name: Download DAT
+        env:
+          CZ88_DAT_URL: ${{ secrets.CZ88_DAT_URL }}
         run: |
-          wget https://github.com/dscharrer/innoextract/releases/download/1.9/innoextract-1.9-linux.tar.xz
-          tar -xvf innoextract-1.9-linux.tar.xz innoextract-1.9-linux/bin/amd64/innoextract --strip-components 3
-          chmod +x innoextract
-          sudo mv innoextract /usr/local/bin
+          mkdir -p ./dist/
+          wget -O ./dist/qqwry.dat "${{ env.CZ88_DAT_URL }}"
       - name: Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
