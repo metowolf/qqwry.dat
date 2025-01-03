@@ -12,15 +12,11 @@ jobs:
           version: 8
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Download DAT
-        env:
-          CZ88_DAT_URL: ${{ secrets.CZ88_DAT_URL }}
-        run: |
-          mkdir -p ./dist/
-          wget -O ./dist/qqwry.dat "${{ env.CZ88_DAT_URL }}"
       - name: Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOWNLOAD_TOKEN: ${{ secrets.DOWNLOAD_TOKEN }}
+          CZDB_TOKEN: ${{ secrets.CZDB_TOKEN }}
         run: |
           pnpm i
           pnpm run build

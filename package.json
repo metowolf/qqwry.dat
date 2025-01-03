@@ -9,8 +9,9 @@
     "build": "node src/build.js"
   },
   "devDependencies": {
-    "execa": "^6.1.0",
-    "lib-qqwry": "^1.3.4",
-    "node-fetch": "^3.3.2"
+    "@ipdb/czdb": "^0.0.2",
+    "execa": "^9.5.2",
+    "iconv-lite": "^0.6.3",
+    "lib-qqwry": "^1.3.4"
   }
 }

@@ -1,62 +1,39 @@
-import fetch from 'node-fetch'
 import fs from 'fs'
 import { execa } from 'execa'
 import libqqwry from 'lib-qqwry'
+import Decoder from '@ipdb/czdb'
+import QQWryPacker from './packer.js'
 
-const globalFetchHeaders = {
-  'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-}
+const DOWNLOAD_TOKEN = process.env.DOWNLOAD_TOKEN
+const CZDB_TOKEN = process.env.CZDB_TOKEN
 
-const getArticles = async () => {
-  const url = 'https://mp.weixin.qq.com/mp/appmsgalbum?__biz=Mzg3Mzc0NTA3NA==&action=getalbum&album_id=2329805780276838401&f=json'
-  const options = {
-    method: 'GET',
-    headers: {
-      ...globalFetchHeaders
-    }
-  }
-  const res = await fetch(url, options)
-  const json = await res.json()
-  const list = json.getalbum_resp.article_list
-  return list.map(item => {
-    return {
-      title: item.title,
-      url: item.url
-    }
-  })
-}
-
-const parseArticle = async (articles) => {
-  for (const article of articles) {
-    const url = article.url
-    const options = {
-      method: 'GET',
-      headers: {
-        ...globalFetchHeaders
-      }
-    }
-    const res = await fetch(url, options)
-    const html = await res.text()
-    // 匹配 https://www.cz88.net/soft/M882k846-2023-12-20.zip
-    const reg = /https:\/\/www\.cz88\.net\/soft\/[a-zA-Z0-9\-]+\.zip/g
-    const match = html.match(reg)
-    if (match && match.length > 0) {
-      return match[0]
-    }
-  }
-  return null
-}
-
-const download = async (url) => {
+const download = async () => {
+  const url = `https://www.cz88.net/api/communityIpAuthorization/communityIpDbFile?fn=czdb&key=${DOWNLOAD_TOKEN}`
   await fs.promises.mkdir('./temp', { recursive: true })
-  await execa('wget', ['-U', globalFetchHeaders['user-agent'], '-O', './temp/download.zip', url])
+  await execa('wget', ['-O', './temp/download.zip', url])
+  // 解压
+  await execa('unzip', ['./temp/download.zip', '-d', './temp'])
 }
 
 const extract = async () => {
-  await execa('unzip', ['./temp/download.zip', '-d', './temp'])
-  await execa('innoextract', ['./temp/setup.exe', '-d', './temp'])
+  const qqwryPacker = new QQWryPacker()
+  const decoder = new Decoder('./temp/cz88_public_v4.czdb', CZDB_TOKEN)
+  decoder.dump(info => {
+    const { startIp, endIp, regionInfo } = info
+    // 过滤 IPv6
+    if (startIp.includes(':')) {
+      return
+    }
+    // 分离 geo, isp
+    const [geo, isp] = regionInfo.split('\t', 2)
+    // 生成记录
+    qqwryPacker.insert(startIp, endIp, geo, isp)
+  })
+
+  // 生成二进制文件
+  const buffer = qqwryPacker.build()
   await fs.promises.mkdir('./dist', { recursive: true })
-  await execa('mv', ['./temp/app/qqwry.dat', './dist/qqwry.dat'])
+  fs.writeFileSync('./dist/qqwry.dat', buffer)
 }
 
 const parseQQwryInfo = async () => {
@@ -91,15 +68,15 @@ const readInfo = () => {
   return JSON.parse(data)
 }
 
-const parseQQWryVersion = async () => {
+const parseQQWryVersion = () => {
   const qqwry = libqqwry(true, './dist/qqwry.dat')
-  const info = await qqwry.searchIP('255.255.255.255')
+  const info = qqwry.searchIP('255.255.255.255')
   return info.Area.match(/(\d+)/gi).join('')
 }
 
 const release = async () => {
   const info = await readInfo()
-  const currentVersion = await parseQQWryVersion()
+  const currentVersion = parseQQWryVersion()
   if (info.latest === currentVersion || info.versions[currentVersion]) {
     console.log('No new version, skip')
     return
@@ -131,28 +108,17 @@ const release = async () => {
 }
 
 const main = async () => {
-  // 1. 获取微信公众号文章列表
-  // const articles = await getArticles()
-  // console.log('文章列表:', articles)
+  // 0. 下载 czdb 并解压
+  await download()
+  console.log('Downloaded')
 
-  // 2. 解析文章内容，获取下载地址
-  // const url = await parseArticle(articles)
-  // if (!url) {
-  //   console.log('未找到下载地址')
-  //   return
-  // }
-  // console.log(`获取到下载地址: ${url}`)
+  // 1. 反解压 czdb 并生成 qqwry.dat
+  await extract()
+  console.log('Extracted')
 
-  // 3. 下载并解压
-  // await download(url)
-  // console.log('下载完成')
-
-  // 4. 解压获取 qqwry.dat
-  // await extract()
-  // console.log('解压完成')
-
-  // 5. 生成版本信息
+  // 2. 生成版本信息
   await release()
+  console.log('Released')
 }
 
 main()
