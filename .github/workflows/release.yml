@@ -2,14 +2,16 @@ name: Release
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '15 8,20 * * *'
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 9
       - name: Checkout
         uses: actions/checkout@v3
       - name: Build
