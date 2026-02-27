@@ -10,7 +10,7 @@ const CZDB_TOKEN = process.env.CZDB_TOKEN
 const download = async () => {
   const url = `https://www.cz88.net/api/communityIpAuthorization/communityIpDbFile?fn=czdb&key=${DOWNLOAD_TOKEN}`
   await fs.promises.mkdir('./temp', { recursive: true })
-  await execa('wget', ['-O', './temp/download.zip', url])
+  await execa('wget', ['--timeout=30', '--tries=3', '-O', './temp/download.zip', url])
   // 解压
   await execa('unzip', ['./temp/download.zip', '-d', './temp'])
 }
