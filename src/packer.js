@@ -23,50 +23,13 @@ class QQWryPacker {
     // 1. 构造数据区
     const recordBuffer = Buffer.concat(this.recordList)
 
-    // 2. 合并相邻的 IP 段
+    // 2. 构造索引区
     const sortedIPs = Array.from(this.ipTree.keys()).sort((a, b) => a - b)
-    const mergedIPs = []
-
-    for (let i = 0; i < sortedIPs.length; i++) {
-      const currentStartIP = sortedIPs[i]
-      const current = this.ipTree.get(currentStartIP)
-
-      // 检查是否可以与上一条记录合并
-      if (mergedIPs.length > 0) {
-        const lastIndex = mergedIPs.length - 1
-        const last = mergedIPs[lastIndex]
-
-        // 合并条件:IP 连续且地理信息相同
-        if (last.endIPInt + 1 === currentStartIP &&
-            last.country === current.country &&
-            last.area === current.area) {
-          // 合并:扩展上一条记录的 endIP
-          mergedIPs[lastIndex] = {
-            startIPInt: last.startIPInt,
-            endIPInt: current.endIPInt,
-            geoOffset: last.geoOffset,
-            country: last.country,
-            area: last.area
-          }
-          continue
-        }
-      }
-
-      // 无法合并,添加新记录
-      mergedIPs.push({
-        startIPInt: currentStartIP,
-        endIPInt: current.endIPInt,
-        geoOffset: current.geoOffset,
-        country: current.country,
-        area: current.area
-      })
-    }
-
-    // 3. 构造索引区
     const indexList = []
 
-    for (let i = 0; i < mergedIPs.length; i++) {
-      const { startIPInt, geoOffset } = mergedIPs[i]
+    for (let i = 0; i < sortedIPs.length; i++) {
+      const startIPInt = sortedIPs[i]
+      const { geoOffset } = this.ipTree.get(startIPInt)
       const indexRecord = Buffer.alloc(7)
       indexRecord.writeUInt32LE(startIPInt, 0)
       if (geoOffset > 0xFFFFFF) {
@@ -78,21 +41,19 @@ class QQWryPacker {
       indexList.push(indexRecord)
     }
 
-    // 4. 构造文件头
+    // 3. 构造文件头
     const headerBuffer = Buffer.alloc(8)
     headerBuffer.writeUInt32LE(8 + recordBuffer.length, 0)
-    headerBuffer.writeUInt32LE(8 + recordBuffer.length + mergedIPs.length * 7 - 7, 4)
+    headerBuffer.writeUInt32LE(8 + recordBuffer.length + sortedIPs.length * 7 - 7, 4)
 
     console.log([
       '文件头长度:', headerBuffer.length,
       '记录区长度:', recordBuffer.length,
       '索引区长度:', Buffer.concat(indexList).length,
-      '合并前记录数:', sortedIPs.length,
-      '合并后记录数:', mergedIPs.length,
-      '合并率:', ((sortedIPs.length - mergedIPs.length) / sortedIPs.length * 100).toFixed(2) + '%'
+      '记录数:', sortedIPs.length,
     ])
 
-    // 5. 合并所有部分
+    // 4. 合并所有部分
     return Buffer.concat([
       headerBuffer,  // 文件头
       recordBuffer,  // 记录区
