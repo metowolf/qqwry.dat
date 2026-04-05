@@ -26,8 +26,13 @@ const extract = async () => {
     }
     // 分离 geo, isp
     const [geo, isp] = regionInfo.split('\t', 2)
+    // 分离 country, region（geo 可能含有层级信息，如"中国–北京–北京–海淀区"）
+    const dashIndex = geo.indexOf('–')
+    const country = dashIndex === -1 ? geo : geo.slice(0, dashIndex)
+    const region = dashIndex === -1 ? '' : geo.slice(dashIndex + '–'.length)
+    const area = [region, isp].filter(Boolean).join(' ')
     // 生成记录
-    qqwryPacker.insert(startIp, endIp, geo, isp)
+    qqwryPacker.insert(startIp, endIp, country, area)
   })
 
   // 生成二进制文件
